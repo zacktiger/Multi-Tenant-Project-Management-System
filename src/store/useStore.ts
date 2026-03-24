@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import * as workspaceApi from '../api/workspace.api';
 import * as projectApi from '../api/project.api';
 import * as taskApi from '../api/task.api';
+import { getApiErrorMessage } from '../utils/apiError';
 
 export type TaskStatus = 'todo' | 'in_progress' | 'done';
 export type TaskPriority = 'low' | 'medium' | 'high';
@@ -86,9 +87,12 @@ export const useStore = create<AppState>((set) => ({
     try {
       const { data } = await workspaceApi.getWorkspaces(orgId);
       set({ workspaces: data.data, isLoadingWorkspaces: false });
-    } catch (err: any) {
-      console.error('Failed to load workspaces:', err.message);
-      set({ error: 'Failed to load workspaces', isLoadingWorkspaces: false });
+    } catch (error) {
+      console.error('Failed to load workspaces:', error);
+      set({
+        error: getApiErrorMessage(error, 'Failed to load workspaces'),
+        isLoadingWorkspaces: false,
+      });
     }
   },
 
@@ -101,9 +105,12 @@ export const useStore = create<AppState>((set) => ({
         const filtered = state.projects.filter((p) => p.workspace_id !== workspaceId);
         return { projects: [...filtered, ...incoming], isLoadingProjects: false };
       });
-    } catch (err: any) {
-      console.error('Failed to load projects:', err.message);
-      set({ error: 'Failed to load projects', isLoadingProjects: false });
+    } catch (error) {
+      console.error('Failed to load projects:', error);
+      set({
+        error: getApiErrorMessage(error, 'Failed to load projects'),
+        isLoadingProjects: false,
+      });
     }
   },
 
@@ -115,9 +122,12 @@ export const useStore = create<AppState>((set) => ({
       );
       const allProjects = results.flatMap((r) => r.data.data.projects || []);
       set({ projects: allProjects, isLoadingProjects: false });
-    } catch (err: any) {
-      console.error('Failed to load projects:', err.message);
-      set({ error: 'Failed to load projects', isLoadingProjects: false });
+    } catch (error) {
+      console.error('Failed to load projects:', error);
+      set({
+        error: getApiErrorMessage(error, 'Failed to load projects'),
+        isLoadingProjects: false,
+      });
     }
   },
 
@@ -126,9 +136,12 @@ export const useStore = create<AppState>((set) => ({
     try {
       const { data } = await taskApi.getTasks(projectId, { ...filters, limit: '100' });
       set({ tasks: data.data.tasks || [], isLoadingTasks: false });
-    } catch (err: any) {
-      console.error('Failed to load tasks:', err.message);
-      set({ error: 'Failed to load tasks', isLoadingTasks: false });
+    } catch (error) {
+      console.error('Failed to load tasks:', error);
+      set({
+        error: getApiErrorMessage(error, 'Failed to load tasks'),
+        isLoadingTasks: false,
+      });
     }
   },
 
@@ -137,8 +150,8 @@ export const useStore = create<AppState>((set) => ({
     try {
       const { data } = await workspaceApi.getOrgMembers(orgId);
       set({ members: data.data, isLoadingMembers: false });
-    } catch (err: any) {
-      console.error('Failed to load members:', err.message);
+    } catch (error) {
+      console.error('Failed to load members:', error);
       set({ isLoadingMembers: false });
     }
   },

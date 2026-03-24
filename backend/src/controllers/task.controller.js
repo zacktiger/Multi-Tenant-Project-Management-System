@@ -34,6 +34,7 @@ async function createTask(req, res, next) {
       orgId: req.orgMember.organizationId,
       title: req.body.title,
       description: req.body.description,
+      status: req.body.status,
       priority: req.body.priority,
       assignedTo: req.body.assignedTo,
       dueDate: req.body.dueDate,

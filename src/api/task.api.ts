@@ -8,7 +8,13 @@ export function getTask(taskId: string) {
   return api.get(`/tasks/${taskId}`);
 }
 
-export function createTask(projectId: string, data: { title: string; priority?: string; dueDate?: string; assignedTo?: string }) {
+export function createTask(projectId: string, data: {
+  title: string;
+  status?: 'todo' | 'in_progress' | 'done';
+  priority?: string;
+  dueDate?: string;
+  assignedTo?: string;
+}) {
   return api.post(`/projects/${projectId}/tasks`, data);
 }
 

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import * as authApi from '../api/auth.api';
 import { getAccessToken, getRefreshToken, setTokens, clearTokens } from '../utils/tokenUtils';
+import { getApiErrorMessage } from '../utils/apiError';
 
 interface User {
   id: string;
@@ -42,9 +43,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       setTokens(accessToken, refreshToken);
       set({ user, organization, isAuthenticated: true });
       return null;
-    } catch (err: any) {
-      const message = err.response?.data?.error || 'Login failed';
-      return message;
+    } catch (error) {
+      return getApiErrorMessage(error, 'Login failed');
     }
   },
 
@@ -56,9 +56,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       setTokens(accessToken, refreshToken);
       set({ user, organization, isAuthenticated: true });
       return null;
-    } catch (err: any) {
-      const message = err.response?.data?.error || 'Signup failed';
-      return message;
+    } catch (error) {
+      return getApiErrorMessage(error, 'Signup failed');
     }
   },
 

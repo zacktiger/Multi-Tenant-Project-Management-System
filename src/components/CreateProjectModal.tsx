@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as projectApi from '../api/project.api';
 import { useStore } from '../store/useStore';
+import { getApiErrorMessage } from '../utils/apiError';
 
 interface CreateProjectModalProps {
   workspaceId: string;
@@ -24,8 +25,8 @@ export default function CreateProjectModal({ workspaceId, onClose }: CreateProje
       addProject(data.data);
       toast.success('Project created!');
       onClose();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to create project');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to create project'));
     } finally {
       setLoading(false);
     }

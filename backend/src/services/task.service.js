@@ -28,7 +28,7 @@ async function getTasks({ projectId, orgId, status, priority, assignedTo, page, 
   return taskModel.getTasksByProject(projectId, orgId, { status, priority, assignedTo, page, limit });
 }
 
-async function createTask({ projectId, orgId, title, description, priority, assignedTo, dueDate, userId }) {
+async function createTask({ projectId, orgId, title, description, status, priority, assignedTo, dueDate, userId }) {
   await verifyProject(projectId, orgId);
 
   const task = await taskModel.createTask({
@@ -36,6 +36,7 @@ async function createTask({ projectId, orgId, title, description, priority, assi
     organizationId: orgId,
     title,
     description,
+    status,
     priority,
     assignedTo,
     createdBy: userId,

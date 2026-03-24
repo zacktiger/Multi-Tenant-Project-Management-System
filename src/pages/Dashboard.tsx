@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { LayoutDashboard, CheckCircle2, Users, Briefcase, Plus } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useAuthStore } from '../store/useAuthStore';
-import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function Dashboard() {
   const { projects, members, fetchMembers, isLoadingMembers } = useStore();

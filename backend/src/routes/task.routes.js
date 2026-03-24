@@ -22,6 +22,7 @@ router.post(
   [
     body('title').trim().isLength({ min: 2 }).withMessage('Title must be at least 2 characters'),
     body('description').optional().trim(),
+    body('status').optional().isIn(['todo', 'in_progress', 'done']).withMessage('Status must be todo, in_progress, or done'),
     body('priority').optional().isIn(['low', 'medium', 'high']).withMessage('Priority must be low, medium, or high'),
     body('assignedTo').optional().isUUID().withMessage('assignedTo must be a valid UUID'),
     body('dueDate').optional().isISO8601().withMessage('dueDate must be a valid date'),

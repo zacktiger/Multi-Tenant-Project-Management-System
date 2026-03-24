@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as taskApi from '../api/task.api';
 import { useStore, type TaskStatus } from '../store/useStore';
+import { getApiErrorMessage } from '../utils/apiError';
 
 interface CreateTaskModalProps {
   projectId: string;
@@ -25,6 +26,7 @@ export default function CreateTaskModal({ projectId, defaultStatus, onClose }: C
     try {
       const { data } = await taskApi.createTask(projectId, {
         title,
+        status: defaultStatus,
         priority,
         dueDate: dueDate || undefined,
         assignedTo: assignedTo || undefined,
@@ -32,8 +34,8 @@ export default function CreateTaskModal({ projectId, defaultStatus, onClose }: C
       addTask(data.data);
       toast.success('Task created!');
       onClose();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to create task');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to create task'));
     } finally {
       setLoading(false);
     }

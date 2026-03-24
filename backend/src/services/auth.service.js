@@ -5,6 +5,7 @@ const env = require('../config/env');
 const userModel = require('../models/user.model');
 const orgModel = require('../models/org.model');
 const tokenModel = require('../models/token.model');
+const workspaceModel = require('../models/workspace.model');
 
 function hashToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
@@ -59,6 +60,12 @@ async function signup({ name, email, password, orgName }) {
       userId: user.id,
       organizationId: organization.id,
       role: 'admin',
+    });
+
+    await workspaceModel.createWorkspace({
+      organizationId: organization.id,
+      name: 'General',
+      createdBy: user.id,
     });
 
     const tokens = await issueTokens(user.id, organization.id, 'admin');

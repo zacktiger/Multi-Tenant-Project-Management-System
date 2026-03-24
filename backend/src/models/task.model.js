@@ -1,19 +1,31 @@
 const { query } = require('../config/db');
 
-async function createTask({ projectId, organizationId, title, description, priority, assignedTo, createdBy, dueDate }) {
+async function createTask({ projectId, organizationId, title, description, status, priority, assignedTo, createdBy, dueDate }) {
+  const nextStatus = status || 'todo';
   const posResult = await query(
     `SELECT COALESCE(MAX(position), -1) + 1 AS next_pos
      FROM tasks
-     WHERE project_id = $1 AND status = 'todo' AND deleted_at IS NULL`,
-    [projectId]
+     WHERE project_id = $1 AND status = $2 AND deleted_at IS NULL`,
+    [projectId, nextStatus]
   );
   const position = posResult.rows[0].next_pos;
 
   const result = await query(
-    `INSERT INTO tasks (project_id, organization_id, title, description, priority, assigned_to, created_by, due_date, position)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `INSERT INTO tasks (project_id, organization_id, title, description, status, priority, assigned_to, created_by, due_date, position)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      RETURNING *`,
-    [projectId, organizationId, title, description || null, priority || 'medium', assignedTo || null, createdBy, dueDate || null, position]
+    [
+      projectId,
+      organizationId,
+      title,
+      description || null,
+      nextStatus,
+      priority || 'medium',
+      assignedTo || null,
+      createdBy,
+      dueDate || null,
+      position,
+    ]
   );
   return result.rows[0];
 }
