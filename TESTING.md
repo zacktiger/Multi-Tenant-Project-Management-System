@@ -17,9 +17,10 @@ This guide is written for Windows PowerShell because that matches the current lo
 
 ## Project Scripts
 
-Root:
+Frontend:
 
 ```powershell
+cd frontend
 npm run dev
 npm run lint
 npm run build
@@ -39,7 +40,9 @@ npm start
 From the project root:
 
 ```powershell
+cd frontend
 npm install
+cd ..
 cd backend
 npm install
 cd ..
@@ -48,7 +51,7 @@ cd ..
 Create env files if needed:
 
 ```powershell
-Copy-Item .env.example .env
+Copy-Item frontend\.env.example frontend\.env
 Copy-Item backend\.env.example backend\.env
 ```
 
@@ -76,8 +79,10 @@ Backend env must include:
 Run these first from the project root:
 
 ```powershell
+cd frontend
 npm run lint
 npm run build
+cd ..
 ```
 
 Rules:
@@ -141,7 +146,7 @@ Expected:
 Terminal 2:
 
 ```powershell
-cd "c:\Users\kshit\OneDrive\Desktop\project manager"
+cd "c:\Users\kshit\OneDrive\Desktop\project manager\frontend"
 npm run dev
 ```
 
@@ -480,8 +485,8 @@ If this flow passes, the product is in decent shape for a first public push.
 
 ## 14. Failure Signals That Should Block A Push
 
-- `npm run lint` fails
-- `npm run build` fails
+- `cd frontend && npm run lint` fails
+- `cd frontend && npm run build` fails
 - Backend cannot boot from a clean terminal
 - `/api/health` fails
 - Signup or login fails
@@ -503,8 +508,8 @@ Once the core flow is stable, the next testing upgrades should be:
 
 ## Pre-Push Checklist
 
-- `npm run lint`
-- `npm run build`
+- `cd frontend && npm run lint`
+- `cd frontend && npm run build`
 - Backend starts cleanly
 - Frontend starts cleanly
 - `/api/health` returns success

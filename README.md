@@ -6,7 +6,7 @@ A full-stack, multi-tenant project management system built with React + Node.js.
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18, Vite, Zustand, Axios, TypeScript |
+| Frontend | React 19, Vite, Zustand, Axios, TypeScript |
 | Backend | Node.js, Express, PostgreSQL, raw SQL (`pg`) |
 | Auth | JWT access tokens + SHA-256 hashed refresh tokens |
 | Styling | Tailwind CSS |
@@ -61,7 +61,7 @@ npm run dev
 ### 3. Frontend
 
 ```bash
-cd ..
+cd ../frontend
 npm install
 cp .env.example .env
 npm run dev
@@ -110,6 +110,16 @@ npm run dev
 ## Project Structure
 
 ```
+├── frontend/
+│   ├── src/               # React frontend
+│   │   ├── api/           # Axios client + API modules
+│   │   ├── components/    # Reusable UI components
+│   │   ├── layouts/       # Auth + Dashboard layouts
+│   │   ├── pages/         # Route pages
+│   │   ├── store/         # Zustand stores
+│   │   └── utils/         # Token helpers
+│   ├── public/            # Static assets
+│   └── package.json
 ├── backend/
 │   ├── src/
 │   │   ├── config/        # DB pool, env validation
@@ -120,13 +130,6 @@ npm run dev
 │   │   ├── services/      # Business logic
 │   │   └── utils/         # Logger, response helpers
 │   └── db/                # Schema + seed SQL
-├── src/                   # React frontend
-│   ├── api/               # Axios client + API modules
-│   ├── components/        # Reusable UI components
-│   ├── layouts/           # Auth + Dashboard layouts
-│   ├── pages/             # Route pages
-│   ├── store/             # Zustand stores
-│   └── utils/             # Token helpers
 ```
 
 ## License
