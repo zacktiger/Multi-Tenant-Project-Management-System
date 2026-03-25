@@ -1,18 +1,63 @@
-import { useEffect } from 'react';
-import { LayoutDashboard, CheckCircle2, Users, Briefcase, Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { LayoutDashboard, CheckCircle2, Users, Briefcase, Plus, Clock } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useAuthStore } from '../store/useAuthStore';
+import LoadingSpinner from '../components/LoadingSpinner';
+import * as activityApi from '../api/activity.api';
+import { formatDistanceToNow } from 'date-fns';
+
+interface Activity {
+  id: string;
+  user_name: string;
+  action: string;
+  entity_type: string;
+  metadata: any;
+  created_at: string;
+}
 
 export default function Dashboard() {
-  const { projects, members, fetchMembers, isLoadingMembers } = useStore();
+  const { 
+    projects, 
+    members, 
+    workspaces,
+    fetchMembers, 
+    fetchWorkspaces,
+    fetchAllProjects,
+    isLoadingMembers,
+    isLoadingProjects,
+    isLoadingWorkspaces
+  } = useStore();
+  
   const organization = useAuthStore((s) => s.organization);
   const user = useAuthStore((s) => s.user);
+
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [isLoadingActivity, setIsLoadingActivity] = useState(false);
 
   useEffect(() => {
     if (organization?.id) {
       fetchMembers(organization.id);
+      fetchWorkspaces(organization.id);
+      
+      setIsLoadingActivity(true);
+      activityApi.getActivity(organization.id, { limit: 10 })
+        .then(res => setActivities(res.data.data.activities))
+        .catch(err => console.error('Failed to fetch activity:', err))
+        .finally(() => setIsLoadingActivity(false));
     }
-  }, [organization?.id, fetchMembers]);
+  }, [organization?.id, fetchMembers, fetchWorkspaces]);
+
+  useEffect(() => {
+    if (workspaces.length > 0) {
+      fetchAllProjects(workspaces);
+    }
+  }, [workspaces, fetchAllProjects]);
+
+  const isLoading = isLoadingProjects || isLoadingWorkspaces;
+
+  if (isLoading && projects.length === 0) {
+    return <LoadingSpinner message="Loading dashboard data..." />;
+  }
 
   const stats = [
     { 
@@ -20,7 +65,7 @@ export default function Dashboard() {
       value: String(projects.length), 
       icon: <Briefcase className="text-blue-600" size={24} />, 
       bgColor: 'bg-blue-50',
-      trend: `Across ${new Set(projects.map(p => p.workspace_id)).size} workspace(s)`
+      trend: `Across ${workspaces.length} workspace(s)`
     },
     { 
       label: 'Active Tasks', 
@@ -37,6 +82,18 @@ export default function Dashboard() {
       trend: organization?.name || 'Your organization'
     }
   ];
+
+  const getActionText = (activity: Activity) => {
+    const name = activity.metadata?.name || activity.metadata?.title || 'an item';
+    switch (activity.action) {
+      case 'project_created': return `created project "${name}"`;
+      case 'task_created': return `created task "${name}"`;
+      case 'task_updated': return `updated task "${name}"`;
+      case 'task_moved': return `moved task "${name}" to ${activity.metadata?.status}`;
+      case 'task_deleted': return `deleted task "${name}"`;
+      default: return `performed ${activity.action} on ${activity.entity_type}`;
+    }
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -61,19 +118,47 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Placeholder for Recent Activity/Projects */}
+      {/* Recent Activity/Projects */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="card h-64 flex flex-col items-center justify-center text-center space-y-4">
-          <div className="p-4 bg-gray-50 rounded-full">
-            <LayoutDashboard size={32} className="text-gray-300" />
+        <div className="card min-h-64 flex flex-col space-y-4">
+          <div className="flex items-center justify-between border-b pb-4">
+            <h3 className="font-bold text-gray-900 flex items-center gap-2">
+              <Clock size={18} className="text-blue-500" />
+              Recent Activity
+            </h3>
           </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">Recent Activity</h3>
-            <p className="text-sm text-gray-500">No recent updates in your projects.</p>
+          
+          <div className="flex-1 overflow-y-auto max-h-80 space-y-4 pr-2 custom-scrollbar">
+            {isLoadingActivity ? (
+              <div className="flex items-center justify-center h-32">
+                <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : activities.length > 0 ? (
+              activities.map((activity) => (
+                <div key={activity.id} className="flex gap-3 text-sm">
+                  <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold shrink-0 uppercase text-xs">
+                    {activity.user_name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-gray-900">
+                      <span className="font-semibold">{activity.user_name}</span> {getActionText(activity)}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                <LayoutDashboard size={32} className="mb-2 opacity-20" />
+                <p className="text-sm">No recent activity found.</p>
+              </div>
+            )}
           </div>
         </div>
         
-        <div className="card h-64 border-dashed border-2 flex flex-col items-center justify-center text-center space-y-4 group cursor-pointer hover:border-blue-500 hover:bg-blue-50/30 transition-all">
+        <div className="card min-h-64 border-dashed border-2 flex flex-col items-center justify-center text-center space-y-4 group cursor-pointer hover:border-blue-500 hover:bg-blue-50/30 transition-all">
           <div className="p-4 bg-blue-50 rounded-full group-hover:bg-blue-100 transition-colors">
             <Plus size={32} className="text-blue-500" />
           </div>

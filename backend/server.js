@@ -56,7 +56,9 @@ app.use('/api/auth', authLimiter, require('./src/routes/auth.routes'));
 app.use('/api/orgs', require('./src/routes/org.routes'));
 app.use('/api', require('./src/routes/project.routes'));
 app.use('/api', require('./src/routes/task.routes'));
+ 
 
+// /
 app.get('/', (req, res) => {
   res.json({
     success: true,

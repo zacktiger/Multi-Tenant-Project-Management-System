@@ -54,6 +54,10 @@ export default function Sidebar() {
             <div className="h-3 bg-slate-700 rounded animate-pulse mb-2 w-32" />
             <div className="h-3 bg-slate-700 rounded animate-pulse w-28" />
           </div>
+        ) : workspaces.length === 0 ? (
+          <div className="px-6 py-10 text-center">
+            <p className="text-xs text-slate-500 italic">No workspaces yet</p>
+          </div>
         ) : (
           workspaces.map((workspace) => (
             <div key={workspace.id} className="mb-6">
