@@ -1,14 +1,21 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useStore } from '../store/useStore';
+import { useAuthStore } from '../store/useAuthStore';
 import KanbanBoard from '../components/KanbanBoard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
+import InviteModal from '../components/InviteModal';
 import { Filter, Search, Plus, MoreHorizontal } from 'lucide-react';
 
 export default function Project() {
   const { id } = useParams();
   const { projects, tasks, isLoadingTasks, error, fetchTasks } = useStore();
+  const organization = useAuthStore((s) => s.organization);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+
+  const isAdmin = organization?.role === 'admin';
+  const isViewer = organization?.role === 'viewer';
   
   const project = projects.find((p) => p.id === id);
 
@@ -46,10 +53,20 @@ export default function Project() {
         </div>
 
         <div className="flex items-center space-x-3 pb-1">
-          <button className="btn-primary flex items-center space-x-2 !py-1.5 !w-auto">
-            <Plus size={18} />
-            <span>Invite Team</span>
-          </button>
+          {isViewer && (
+            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full font-medium">
+              View only
+            </span>
+          )}
+          {isAdmin && (
+            <button
+              onClick={() => setShowInviteModal(true)}
+              className="btn-primary flex items-center space-x-2 !py-1.5 !w-auto"
+            >
+              <Plus size={18} />
+              <span>Invite Team</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -89,6 +106,12 @@ export default function Project() {
           <KanbanBoard tasks={tasks} projectId={id!} />
         )}
       </div>
+
+      {/* Invite Modal */}
+      {showInviteModal && (
+        <InviteModal onClose={() => setShowInviteModal(false)} />
+      )}
     </div>
   );
 }
+

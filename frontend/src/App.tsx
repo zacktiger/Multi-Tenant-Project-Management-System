@@ -16,9 +16,9 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Project from './pages/Project';
+import Workspace from './pages/Workspace';
 import NotFound from './pages/NotFound';
 
-const WorkspaceDetail = () => <div className="flex h-full items-center justify-center text-gray-400">Workspace View</div>;
 
 function App() {
   const initAuth = useAuthStore((s) => s.initAuth);
@@ -54,7 +54,7 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<DashboardLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/workspace/:id" element={<WorkspaceDetail />} />
+              <Route path="/workspace/:id" element={<Workspace />} />
               <Route path="/project/:id" element={<Project />} />
             </Route>
           </Route>

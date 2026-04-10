@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 import * as projectApi from '../api/project.api';
 import { useStore } from '../store/useStore';
 import { getApiErrorMessage } from '../utils/apiError';
@@ -8,9 +9,10 @@ import { getApiErrorMessage } from '../utils/apiError';
 interface CreateProjectModalProps {
   workspaceId: string;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export default function CreateProjectModal({ workspaceId, onClose }: CreateProjectModalProps) {
+export default function CreateProjectModal({ workspaceId, onClose, onSuccess }: CreateProjectModalProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,10 +25,18 @@ export default function CreateProjectModal({ workspaceId, onClose }: CreateProje
     try {
       const { data } = await projectApi.createProject(workspaceId, { name, description: description || undefined });
       addProject(data.data);
-      toast.success('Project created!');
-      onClose();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        toast.success('Project created!');
+        onClose();
+      }
     } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Failed to create project'));
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
+        toast.error('A project with this name already exists');
+      } else {
+        toast.error(getApiErrorMessage(error, 'Failed to create project'));
+      }
     } finally {
       setLoading(false);
     }

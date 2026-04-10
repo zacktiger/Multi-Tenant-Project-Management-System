@@ -165,3 +165,8 @@ CREATE INDEX idx_activity_logs_entity ON activity_logs(entity_type, entity_id);
 
 CREATE INDEX idx_task_history_task_id ON task_history(task_id);
 CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
+
+-- Unique project name per workspace (active projects only)
+CREATE UNIQUE INDEX idx_projects_unique_name_per_workspace
+ON projects (workspace_id, LOWER(name))
+WHERE deleted_at IS NULL;

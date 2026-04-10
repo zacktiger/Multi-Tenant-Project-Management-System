@@ -21,13 +21,24 @@ async function getProjects({ workspaceId, orgId, page, limit }) {
 async function createProject({ workspaceId, orgId, name, description, userId }) {
   await verifyWorkspaceOrg(workspaceId, orgId);
 
-  const project = await projectModel.createProject({
-    workspaceId,
-    organizationId: orgId,
-    name,
-    description,
-    createdBy: userId,
-  });
+  let project;
+  try {
+    project = await projectModel.createProject({
+      workspaceId,
+      organizationId: orgId,
+      name,
+      description,
+      createdBy: userId,
+    });
+  } catch (err) {
+    if (err.code === '23505') {
+      const dupErr = new Error('A project with this name already exists in this workspace');
+      dupErr.statusCode = 409;
+      dupErr.code = 'PROJECT_NAME_TAKEN';
+      throw dupErr;
+    }
+    throw err;
+  }
 
   setImmediate(async () => {
     try {

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { LayoutDashboard, CheckCircle2, Users, Briefcase, Plus, Clock } from 'lucide-react';
+import { LayoutDashboard, CheckCircle2, Users, Briefcase, Plus, Clock, ChevronDown } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useAuthStore } from '../store/useAuthStore';
 import LoadingSpinner from '../components/LoadingSpinner';
+import CreateProjectModal from '../components/CreateProjectModal';
 import * as activityApi from '../api/activity.api';
 import { formatDistanceToNow } from 'date-fns';
+import toast from 'react-hot-toast';
 
 interface Activity {
   id: string;
@@ -23,6 +25,7 @@ export default function Dashboard() {
     fetchMembers, 
     fetchWorkspaces,
     fetchAllProjects,
+    fetchProjects,
     isLoadingMembers,
     isLoadingProjects,
     isLoadingWorkspaces
@@ -31,8 +34,16 @@ export default function Dashboard() {
   const organization = useAuthStore((s) => s.organization);
   const user = useAuthStore((s) => s.user);
 
+  const isMember = organization?.role === 'member' || organization?.role === 'admin';
+  const isViewer = !isMember;
+
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoadingActivity, setIsLoadingActivity] = useState(false);
+  
+  // Project creation state
+  const [showCreateProject, setShowCreateProject] = useState(false);
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>('');
+  const [isSelectingWorkspace, setIsSelectingWorkspace] = useState(false);
 
   useEffect(() => {
     if (organization?.id) {
@@ -52,6 +63,23 @@ export default function Dashboard() {
       fetchAllProjects(workspaces);
     }
   }, [workspaces, fetchAllProjects]);
+
+  const handleCreateProjectClick = () => {
+    if (workspaces.length === 0) {
+      toast.error('Create a workspace first');
+    } else if (workspaces.length === 1) {
+      setSelectedWorkspaceId(workspaces[0].id);
+      setShowCreateProject(true);
+    } else {
+      setIsSelectingWorkspace(true);
+    }
+  };
+
+  const handleWorkspaceSelect = (workspaceId: string) => {
+    setSelectedWorkspaceId(workspaceId);
+    setIsSelectingWorkspace(false);
+    setShowCreateProject(true);
+  };
 
   const isLoading = isLoadingProjects || isLoadingWorkspaces;
 
@@ -158,16 +186,71 @@ export default function Dashboard() {
           </div>
         </div>
         
-        <div className="card min-h-64 border-dashed border-2 flex flex-col items-center justify-center text-center space-y-4 group cursor-pointer hover:border-blue-500 hover:bg-blue-50/30 transition-all">
-          <div className="p-4 bg-blue-50 rounded-full group-hover:bg-blue-100 transition-colors">
-            <Plus size={32} className="text-blue-500" />
+        {isViewer ? (
+          <div className="card min-h-64 flex flex-col items-center justify-center text-center space-y-3">
+            <div className="p-4 bg-gray-50 rounded-full">
+              <Briefcase size={32} className="text-gray-300" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-500">View Only Access</h3>
+              <p className="text-sm text-gray-400">Contact an admin to create projects.</p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">Create New Project</h3>
-            <p className="text-sm text-gray-500">Start a new workspace for your team.</p>
+        ) : isSelectingWorkspace ? (
+          <div className="card min-h-64 border-dashed border-2 flex flex-col items-center justify-center text-center space-y-4 transition-all border-blue-300 bg-blue-50/20">
+            <div className="p-4 bg-blue-100 rounded-full">
+              <Plus size={32} className="text-blue-600" />
+            </div>
+            <div className="w-full max-w-xs space-y-3">
+              <h3 className="font-semibold text-gray-900">Select Workspace</h3>
+              <div className="relative">
+                <select 
+                  className="input-field pr-10 appearance-none bg-white"
+                  onChange={(e) => handleWorkspaceSelect(e.target.value)}
+                  defaultValue=""
+                >
+                  <option value="" disabled>Choose a workspace...</option>
+                  {workspaces.map(ws => (
+                    <option key={ws.id} value={ws.id}>{ws.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+              </div>
+              <button 
+                onClick={() => setIsSelectingWorkspace(false)}
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div 
+            onClick={handleCreateProjectClick}
+            className="card min-h-64 border-dashed border-2 flex flex-col items-center justify-center text-center space-y-4 group cursor-pointer hover:border-blue-500 hover:bg-blue-50/30 transition-all"
+          >
+            <div className="p-4 bg-blue-50 rounded-full group-hover:bg-blue-100 transition-colors">
+              <Plus size={32} className="text-blue-500" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">Create New Project</h3>
+              <p className="text-sm text-gray-500">Start a new workspace for your team.</p>
+            </div>
+          </div>
+        )}
       </div>
+
+      {showCreateProject && selectedWorkspaceId && (
+        <CreateProjectModal
+          workspaceId={selectedWorkspaceId}
+          onClose={() => setShowCreateProject(false)}
+          onSuccess={() => {
+            setShowCreateProject(false);
+            fetchProjects(selectedWorkspaceId);
+            toast.success('Project created');
+          }}
+        />
+      )}
     </div>
   );
 }

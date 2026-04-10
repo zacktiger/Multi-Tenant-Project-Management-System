@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { useAuthStore } from '../store/useAuthStore';
 import CreateProjectModal from './CreateProjectModal';
@@ -10,7 +10,10 @@ export default function Sidebar() {
   const user = useAuthStore((s) => s.user);
   const organization = useAuthStore((s) => s.organization);
   const { id: projectId } = useParams();
+  const navigate = useNavigate();
   const [createModalWsId, setCreateModalWsId] = useState<string | null>(null);
+
+  const isAdmin = organization?.role === 'admin';
 
   useEffect(() => {
     if (organization?.id) {
@@ -65,13 +68,15 @@ export default function Sidebar() {
                 <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
                   {workspace.name}
                 </h3>
-                <button
-                  onClick={() => setCreateModalWsId(workspace.id)}
-                  className="text-slate-600 hover:text-slate-300 transition-colors"
-                  title="New project"
-                >
-                  <Plus size={14} />
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => setCreateModalWsId(workspace.id)}
+                    className="text-slate-600 hover:text-slate-300 transition-colors"
+                    title="New project"
+                  >
+                    <Plus size={14} />
+                  </button>
+                )}
               </div>
               <div className="space-y-1 px-3">
                 {projects
@@ -98,7 +103,10 @@ export default function Sidebar() {
                     );
                   })}
                 
-                <button className="flex items-center w-full px-3 py-2 text-sm text-slate-500 hover:text-slate-300 transition-colors italic">
+                <button
+                  onClick={() => navigate(`/workspace/${workspace.id}`)}
+                  className="flex items-center w-full px-3 py-2 text-sm text-slate-500 hover:text-slate-300 transition-colors italic"
+                >
                   <Users size={16} className="mr-3" />
                   <span>Team Space</span>
                 </button>
