@@ -19,3 +19,15 @@ export function logout(data: { refreshToken: string }) {
 export function refresh(data: { refreshToken: string }) {
   return api.post('/auth/refresh', data);
 }
+
+export function getInvitation(token: string) {
+  return api.get(`/auth/invitations/${token}`);
+}
+
+export function acceptInvitation(token: string, data: { name?: string; password?: string }) {
+  return api.post(`/auth/invitations/${token}/accept`, data);
+}
+
+export function switchOrganization(orgId: string) {
+  return api.post(`/auth/switch/${orgId}`);
+}

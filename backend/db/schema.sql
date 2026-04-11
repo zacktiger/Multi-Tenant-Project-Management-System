@@ -170,3 +170,23 @@ CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
 CREATE UNIQUE INDEX idx_projects_unique_name_per_workspace
 ON projects (workspace_id, LOWER(name))
 WHERE deleted_at IS NULL;
+
+-- ============================================
+-- ORGANIZATION INVITATIONS
+-- ============================================
+CREATE TABLE organization_invitations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  role member_role NOT NULL DEFAULT 'member',
+  token TEXT UNIQUE NOT NULL,
+  invited_by UUID REFERENCES users(id),
+  expires_at TIMESTAMPTZ NOT NULL,
+  accepted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Ensure only one pending invite per email per organization
+CREATE UNIQUE INDEX idx_pending_invites_unique_per_org
+ON organization_invitations (organization_id, LOWER(email))
+WHERE accepted_at IS NULL;

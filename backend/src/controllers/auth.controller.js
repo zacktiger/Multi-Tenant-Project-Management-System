@@ -71,5 +71,44 @@ async function getMe(req, res, next) {
   }
 }
 
-module.exports = { signup, login, refresh, logout, getMe };
+async function switchOrganization(req, res, next) {
+  try {
+    const { orgId } = req.params;
+    const data = await authService.switchOrganization({
+      userId: req.user.userId,
+      orgId,
+    });
+    return success(res, data, 'Organization switched');
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function acceptInvitation(req, res, next) {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return badRequest(res, errors.array()[0].msg, 'VALIDATION_ERROR');
+  }
+
+  try {
+    const { token } = req.params;
+    const { name, password } = req.body;
+    const data = await authService.acceptInvitation({ token, name, password });
+    return created(res, data, 'Invitation accepted successfully');
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function getInvitation(req, res, next) {
+  try {
+    const { token } = req.params;
+    const data = await authService.getInvitation(token);
+    return success(res, data, 'Invitation details');
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { signup, login, refresh, logout, getMe, acceptInvitation, getInvitation, switchOrganization };
 

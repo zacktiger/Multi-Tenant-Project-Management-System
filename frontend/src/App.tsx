@@ -18,6 +18,7 @@ import Dashboard from './pages/Dashboard';
 import Project from './pages/Project';
 import Workspace from './pages/Workspace';
 import NotFound from './pages/NotFound';
+import AcceptInvite from './pages/AcceptInvite';
 
 
 function App() {
@@ -48,6 +49,7 @@ function App() {
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/invite/:token" element={<AcceptInvite />} />
           </Route>
 
           {/* Protected Dashboard Routes */}

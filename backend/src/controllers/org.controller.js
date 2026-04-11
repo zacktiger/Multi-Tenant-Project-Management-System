@@ -19,12 +19,13 @@ async function inviteMember(req, res, next) {
 
   try {
     const { email, role } = req.body;
-    const member = await orgService.inviteMember({
+    const invitation = await orgService.createInvitation({
       orgId: req.params.orgId,
       email,
       role,
+      invitedBy: req.user.userId,
     });
-    return created(res, member, 'Member invited successfully');
+    return created(res, invitation, 'Member invited successfully');
   } catch (err) {
     next(err);
   }

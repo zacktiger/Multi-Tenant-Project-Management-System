@@ -30,8 +30,8 @@ export default function Signup() {
   return (
     <div className="space-y-8">
       <div className="text-center md:text-left">
-        <h2 className="text-3xl font-bold text-gray-900">Create Account</h2>
-        <p className="mt-2 text-gray-500">Join 10,000+ teams shipping better products.</p>
+        <h2 className="text-3xl font-bold text-gray-900">Start Your Organization</h2>
+        <p className="mt-2 text-gray-500">Create a new workspace and invite your team. You will be the first administrator.</p>
       </div>
 
       {error && (
@@ -89,17 +89,20 @@ export default function Signup() {
 
         <div className="space-y-1.5">
           <label className="block text-sm font-semibold text-gray-700" htmlFor="orgName">
-            Organization Name
+            Company or Organization Name
           </label>
           <input 
             id="orgName"
             type="text" 
-            placeholder="Acme Corp"
+            placeholder="Acme, Inc."
             value={orgName}
             onChange={(e) => setOrgName(e.target.value)}
             className="input-field"
             required
           />
+          <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-1">
+            This creates a fresh workspace for your team
+          </p>
         </div>
 
         <p className="text-xs text-gray-500">
@@ -109,7 +112,7 @@ export default function Signup() {
         </p>
         
         <button type="submit" className="btn-primary" disabled={loading}>
-          {loading ? 'Creating account...' : 'Create Account'}
+          {loading ? 'Creating workspace...' : 'Start New Organization'}
         </button>
       </form>
 

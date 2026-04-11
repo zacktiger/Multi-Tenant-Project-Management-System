@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const orgModel = require('../models/org.model');
 const userModel = require('../models/user.model');
 const workspaceModel = require('../models/workspace.model');
@@ -6,36 +7,39 @@ async function getOrgMembers(orgId) {
   return orgModel.getOrgMembers(orgId);
 }
 
-async function inviteMember({ orgId, email, role }) {
-  const user = await userModel.findUserByEmail(email);
-  if (!user) {
-    const err = new Error('User not found, they must sign up first');
-    err.statusCode = 404;
-    err.code = 'USER_NOT_FOUND';
-    throw err;
+async function createInvitation({ orgId, email, role, invitedBy }) {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // 1. Check if the user is already a member
+  const existingUser = await userModel.findUserByEmail(normalizedEmail);
+  if (existingUser) {
+    const membership = await orgModel.findMembership(existingUser.id, orgId);
+    if (membership) {
+      const err = new Error('This person is already a member of this organization');
+      err.statusCode = 409;
+      err.code = 'ALREADY_MEMBER';
+      throw err;
+    }
   }
 
-  const existing = await orgModel.findMembership(user.id, orgId);
-  if (existing) {
-    const err = new Error('User is already a member of this organization');
-    err.statusCode = 409;
-    err.code = 'ALREADY_MEMBER';
-    throw err;
-  }
+  // 2. Clean up old pending invites for this email + org (Resend logic)
+  await orgModel.deleteOldPendingInvites(orgId, normalizedEmail);
 
-  const member = await orgModel.addOrgMember({
-    userId: user.id,
+  // 3. Create new invitation
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7);
+
+  const invitation = await orgModel.createInvitation({
     organizationId: orgId,
+    email: normalizedEmail,
     role,
+    token,
+    invitedBy,
+    expiresAt,
   });
 
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role,
-    joined_at: member.joined_at,
-  };
+  return invitation;
 }
 
 async function getWorkspaces(orgId) {
@@ -50,4 +54,4 @@ async function createWorkspace({ orgId, name, userId }) {
   });
 }
 
-module.exports = { getOrgMembers, inviteMember, getWorkspaces, createWorkspace };
+module.exports = { getOrgMembers, createInvitation, getWorkspaces, createWorkspace };

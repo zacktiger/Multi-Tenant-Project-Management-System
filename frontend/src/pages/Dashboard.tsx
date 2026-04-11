@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { LayoutDashboard, CheckCircle2, Users, Briefcase, Plus, Clock, ChevronDown } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useAuthStore } from '../store/useAuthStore';
@@ -13,7 +13,7 @@ interface Activity {
   user_name: string;
   action: string;
   entity_type: string;
-  metadata: any;
+  metadata: Record<string, string | number | boolean | null | undefined>;
   created_at: string;
 }
 
@@ -45,18 +45,26 @@ export default function Dashboard() {
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>('');
   const [isSelectingWorkspace, setIsSelectingWorkspace] = useState(false);
 
-  useEffect(() => {
-    if (organization?.id) {
-      fetchMembers(organization.id);
-      fetchWorkspaces(organization.id);
-      
-      setIsLoadingActivity(true);
-      activityApi.getActivity(organization.id, { limit: 10 })
-        .then(res => setActivities(res.data.data.activities))
-        .catch(err => console.error('Failed to fetch activity:', err))
-        .finally(() => setIsLoadingActivity(false));
+  const loadDashboardData = useCallback(async () => {
+    if (!organization?.id) return;
+    
+    fetchMembers(organization.id);
+    fetchWorkspaces(organization.id);
+    
+    setIsLoadingActivity(true);
+    try {
+      const res = await activityApi.getActivity(organization.id, { limit: 10 });
+      setActivities(res.data.data.activities);
+    } catch (err) {
+      console.error('Failed to fetch activity:', err);
+    } finally {
+      setIsLoadingActivity(false);
     }
   }, [organization?.id, fetchMembers, fetchWorkspaces]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   useEffect(() => {
     if (workspaces.length > 0) {

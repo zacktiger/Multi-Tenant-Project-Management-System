@@ -72,7 +72,7 @@ async function signup({ name, email, password, orgName }) {
 
     return {
       user: { id: user.id, name: user.name, email: user.email },
-      organization: { id: organization.id, name: organization.name, slug: organization.slug },
+      organization: { id: organization.id, name: organization.name, slug: organization.slug, role: 'admin' },
       ...tokens,
     };
   } catch (err) {
@@ -114,7 +114,7 @@ async function login({ email, password }) {
 
   return {
     user: { id: user.id, name: user.name, email: user.email },
-    organization: { id: membership.id, name: membership.name, slug: membership.slug },
+    organization: { id: membership.id, name: membership.name, slug: membership.slug, role: membership.role },
     ...tokens,
   };
 }
@@ -205,4 +205,128 @@ async function getMe(userId) {
   };
 }
 
-module.exports = { signup, login, refresh, logout, getMe };
+async function switchOrganization({ userId, orgId }) {
+  const membership = await orgModel.findMembership(userId, orgId);
+  if (!membership) {
+    const err = new Error('You are not a member of this organization');
+    err.statusCode = 403;
+    err.code = 'NOT_MEMBER';
+    throw err;
+  }
+
+  const org = await orgModel.findOrgById(orgId);
+  const tokens = await issueTokens(userId, orgId, membership.role);
+
+  return {
+    organization: { id: org.id, name: org.name, slug: org.slug, role: membership.role },
+    ...tokens,
+  };
+}
+
+async function acceptInvitation({ token, name, password }) {
+  const invitation = await orgModel.findInvitationByToken(token);
+
+  if (!invitation) {
+    const err = new Error('Invalid invitation link');
+    err.statusCode = 404;
+    err.code = 'INVITATION_NOT_FOUND';
+    throw err;
+  }
+
+  // Already accepted?
+  if (invitation.accepted_at) {
+    const err = new Error('This invitation has already been accepted');
+    err.statusCode = 400;
+    err.code = 'INVITATION_ALREADY_ACCEPTED';
+    throw err;
+  }
+
+  // Expired?
+  if (new Date(invitation.expires_at) < new Date()) {
+    const err = new Error('This invitation has expired');
+    err.statusCode = 400;
+    err.code = 'INVITATION_EXPIRED';
+    throw err;
+  }
+
+  const normalizedEmail = invitation.email.toLowerCase();
+  let user = await userModel.findUserByEmail(normalizedEmail);
+
+  if (!user) {
+    // New user signup via invitation
+    if (!name || !password) {
+      const err = new Error('Full Name and Password are required');
+      err.statusCode = 400;
+      err.code = 'CREDENTIALS_REQUIRED';
+      throw err;
+    }
+    const passwordHash = await bcrypt.hash(password, 10);
+    user = await userModel.createUser({ name, email: normalizedEmail, passwordHash });
+  }
+
+  const organizationId = invitation.organization_id;
+  const organization = await orgModel.findOrgById(organizationId);
+  if (!organization) {
+    const err = new Error('The organization no longer exists');
+    err.statusCode = 404;
+    err.code = 'ORG_NOT_FOUND';
+    throw err;
+  }
+
+  // Idempotency: Check if they are already a member (could have joined via another invite or added manually)
+  const existingMembership = await orgModel.findMembership(user.id, organizationId);
+  
+  if (!existingMembership) {
+    await orgModel.addOrgMember({
+      userId: user.id,
+      organizationId,
+      role: invitation.role,
+    });
+  }
+
+  // Mark this specific invitation as used
+  await orgModel.markInvitationAccepted(invitation.id);
+
+  // Success - issue tokens for the joined organization
+  const role = existingMembership ? existingMembership.role : invitation.role;
+  const tokens = await issueTokens(user.id, organizationId, role);
+
+  return {
+    user: { id: user.id, name: user.name, email: user.email },
+    organization: { id: organization.id, name: organization.name, slug: organization.slug, role },
+    ...tokens,
+  };
+}
+
+async function getInvitation(token) {
+  const invitation = await orgModel.findInvitationByToken(token);
+
+  if (!invitation) {
+    const err = new Error('Invalid or expired invitation token');
+    err.statusCode = 404;
+    err.code = 'INVITATION_NOT_FOUND';
+    throw err;
+  }
+
+  if (invitation.accepted_at) {
+    const err = new Error('This invitation has already been accepted');
+    err.statusCode = 400;
+    err.code = 'INVITATION_ALREADY_ACCEPTED';
+    throw err;
+  }
+
+  if (new Date(invitation.expires_at) < new Date()) {
+    const err = new Error('This invitation has expired');
+    err.statusCode = 400;
+    err.code = 'INVITATION_EXPIRED';
+    throw err;
+  }
+
+  return {
+    email: invitation.email,
+    organizationName: invitation.organization_name,
+    role: invitation.role,
+  };
+}
+
+module.exports = { signup, login, refresh, logout, getMe, acceptInvitation, getInvitation, switchOrganization };

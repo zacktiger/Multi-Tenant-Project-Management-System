@@ -29,7 +29,18 @@ export default function Login() {
     <div className="space-y-8">
       <div className="text-center md:text-left">
         <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
-        <p className="mt-2 text-gray-500">Please enter your details to sign in.</p>
+        <p className="mt-2 text-gray-500">Sign in to your organization's workspace.</p>
+      </div>
+
+      <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 flex items-start gap-3">
+        <div className="mt-0.5">
+          <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <p className="text-xs text-blue-700 leading-relaxed">
+          <strong>Joining a company?</strong> If you were invited by a teammate, please use the unique link they shared with you to join their workspace.
+        </p>
       </div>
 
       {error && (

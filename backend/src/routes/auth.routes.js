@@ -43,4 +43,17 @@ router.post(
 
 router.get('/me', authenticate, authController.getMe);
 
+router.post('/switch/:orgId', authenticate, authController.switchOrganization);
+
+router.get('/invitations/:token', authController.getInvitation);
+
+router.post(
+  '/invitations/:token/accept',
+  [
+    body('name').optional().trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
+    body('password').optional().isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+  ],
+  authController.acceptInvitation
+);
+
 module.exports = router;

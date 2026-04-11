@@ -89,6 +89,55 @@ async function removeMember(userId, orgId) {
   );
 }
 
+async function createInvitation({ organizationId, email, role, token, invitedBy, expiresAt }) {
+  const result = await query(
+    `INSERT INTO organization_invitations (organization_id, email, role, token, invited_by, expires_at)
+     VALUES ($1, LOWER($2), $3, $4, $5, $6)
+     RETURNING id, organization_id, email, role, token, invited_by, expires_at, created_at`,
+    [organizationId, email, role, token, invitedBy, expiresAt]
+  );
+  return result.rows[0];
+}
+
+async function findPendingInvitation(organizationId, email) {
+  const result = await query(
+    `SELECT * FROM organization_invitations
+     WHERE organization_id = $1 AND LOWER(email) = LOWER($2) AND accepted_at IS NULL`,
+    [organizationId, email]
+  );
+  return result.rows[0] || null;
+}
+
+async function deleteOldPendingInvites(organizationId, email) {
+  await query(
+    `DELETE FROM organization_invitations
+     WHERE organization_id = $1 AND LOWER(email) = LOWER($2) AND accepted_at IS NULL`,
+    [organizationId, email]
+  );
+}
+
+async function findInvitationByToken(token) {
+  const result = await query(
+    `SELECT i.*, o.name as organization_name
+     FROM organization_invitations i
+     JOIN organizations o ON o.id = i.organization_id
+     WHERE i.token = $1`,
+    [token]
+  );
+  return result.rows[0] || null;
+}
+
+async function markInvitationAccepted(id) {
+  const result = await query(
+    `UPDATE organization_invitations
+     SET accepted_at = NOW()
+     WHERE id = $1
+     RETURNING *`,
+    [id]
+  );
+  return result.rows[0] || null;
+}
+
 module.exports = {
   createOrganization,
   findOrgById,
@@ -99,4 +148,7 @@ module.exports = {
   addOrgMember,
   updateMemberRole,
   removeMember,
+  createInvitation,
+  findInvitationByToken,
+  markInvitationAccepted,
 };
