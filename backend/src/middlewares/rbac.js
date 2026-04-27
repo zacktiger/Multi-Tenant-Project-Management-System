@@ -1,6 +1,7 @@
 const orgModel = require('../models/org.model');
 
 async function loadOrgMembership(req, res, next) {
+  const isFallback = !req.params.orgId;
   const orgId = req.params.orgId || req.user.orgId;
 
   if (!orgId) {
@@ -17,7 +18,7 @@ async function loadOrgMembership(req, res, next) {
     if (!membership) {
       return res.status(403).json({
         success: false,
-        error: 'You are not a member of this organization',
+        error: isFallback ? 'Membership not found' : 'You are not a member of this organization',
         code: 'NOT_ORG_MEMBER',
       });
     }

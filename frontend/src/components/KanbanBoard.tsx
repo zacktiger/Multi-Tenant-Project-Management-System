@@ -3,6 +3,7 @@ import type { Task, TaskStatus } from '../store/useStore';
 import { useStore } from '../store/useStore';
 import TaskCard from './TaskCard';
 import CreateTaskModal from './CreateTaskModal';
+import TaskDetailModal from './TaskDetailModal';
 import { Plus, LayoutDashboard } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as taskApi from '../api/task.api';
@@ -10,6 +11,7 @@ import * as taskApi from '../api/task.api';
 interface KanbanBoardProps {
   tasks: Task[];
   projectId: string;
+  isViewer?: boolean;
 }
 
 const columns: { id: TaskStatus; label: string; color: string }[] = [
@@ -18,8 +20,9 @@ const columns: { id: TaskStatus; label: string; color: string }[] = [
   { id: 'done', label: 'Done', color: 'border-t-emerald-500' },
 ];
 
-export default function KanbanBoard({ tasks, projectId }: KanbanBoardProps) {
+export default function KanbanBoard({ tasks, projectId, isViewer }: KanbanBoardProps) {
   const [createModalStatus, setCreateModalStatus] = useState<TaskStatus | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const { moveTaskOptimistic, setTasks } = useStore();
 
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
@@ -83,12 +86,14 @@ export default function KanbanBoard({ tasks, projectId }: KanbanBoardProps) {
                     {columnTasks.length}
                   </span>
                 </div>
-                <button
-                  onClick={() => setCreateModalStatus(column.id)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <Plus size={18} />
-                </button>
+                {!isViewer && (
+                  <button
+                    onClick={() => setCreateModalStatus(column.id)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <Plus size={18} />
+                  </button>
+                )}
               </div>
 
               {/* Tasks List */}
@@ -97,11 +102,11 @@ export default function KanbanBoard({ tasks, projectId }: KanbanBoardProps) {
                   columnTasks.map((task) => (
                     <div
                       key={task.id}
-                      draggable
-                      onDragStart={() => handleDragStart(task.id)}
+                      draggable={!isViewer}
+                      onDragStart={() => !isViewer && handleDragStart(task.id)}
                       className={draggedTaskId === task.id ? 'opacity-40' : ''}
                     >
-                      <TaskCard task={task} />
+                      <TaskCard task={task} onClick={() => setSelectedTask(task)} />
                     </div>
                   ))
                 ) : (
@@ -113,15 +118,17 @@ export default function KanbanBoard({ tasks, projectId }: KanbanBoardProps) {
               </div>
 
               {/* Add Task Button */}
-              <div className="p-3">
-                <button
-                  onClick={() => setCreateModalStatus(column.id)}
-                  className="w-full flex items-center justify-center space-x-2 py-2 border-2 border-dashed border-gray-200 rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 transition-all group"
-                >
-                  <Plus size={16} className="text-gray-400 group-hover:text-blue-500" />
-                  <span className="font-medium">Add task</span>
-                </button>
-              </div>
+              {!isViewer && (
+                <div className="p-3">
+                  <button
+                    onClick={() => setCreateModalStatus(column.id)}
+                    className="w-full flex items-center justify-center space-x-2 py-2 border-2 border-dashed border-gray-200 rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 transition-all group"
+                  >
+                    <Plus size={16} className="text-gray-400 group-hover:text-blue-500" />
+                    <span className="font-medium">Add task</span>
+                  </button>
+                </div>
+              )}
             </div>
           );
         })}
@@ -132,6 +139,14 @@ export default function KanbanBoard({ tasks, projectId }: KanbanBoardProps) {
           projectId={projectId}
           defaultStatus={createModalStatus}
           onClose={() => setCreateModalStatus(null)}
+        />
+      )}
+
+      {selectedTask && (
+        <TaskDetailModal
+          task={selectedTask}
+          isViewer={!!isViewer}
+          onClose={() => setSelectedTask(null)}
         />
       )}
     </>

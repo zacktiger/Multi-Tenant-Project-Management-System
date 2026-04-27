@@ -96,6 +96,7 @@ async function softDeleteProject(projectId, orgId) {
      SET deleted_at = NOW()
      WHERE id = $1
      AND organization_id = $2
+     AND deleted_at IS NULL
      RETURNING id`,
     [projectId, orgId]
   );

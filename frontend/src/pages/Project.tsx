@@ -20,7 +20,7 @@ const statusLabel: Record<TaskStatus, string> = {
 
 export default function Project() {
   const { id } = useParams();
-  const { projects, tasks, members, isLoadingTasks, error, fetchTasks } = useStore();
+  const { projects, tasks, members, isLoadingTasks, error, fetchTasks, fetchMembers } = useStore();
   const organization = useAuthStore((s) => s.organization);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,7 +45,11 @@ export default function Project() {
       }
       fetchTasks(id, filters);
     }
-  }, [id, fetchTasks, priorityFilter, statusFilter]);
+
+    if (organization?.id && members.length === 0) {
+      fetchMembers(organization.id);
+    }
+  }, [id, fetchTasks, priorityFilter, statusFilter, organization?.id, members.length, fetchMembers]);
 
   const filteredTasks = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -213,7 +217,7 @@ export default function Project() {
         ) : error ? (
           <ErrorMessage message={error} onRetry={() => fetchTasks(id!)} />
         ) : viewMode === 'board' ? (
-          <KanbanBoard tasks={filteredTasks} projectId={id!} />
+          <KanbanBoard tasks={filteredTasks} projectId={id!} isViewer={isViewer} />
         ) : viewMode === 'list' ? (
           filteredTasks.length === 0 ? (
             <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-500">

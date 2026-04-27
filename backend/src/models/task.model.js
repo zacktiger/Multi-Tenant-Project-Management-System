@@ -1,4 +1,4 @@
-const { query } = require('../config/db');
+const { query, getClient } = require('../config/db');
 
 async function createTask({ projectId, organizationId, title, description, status, priority, assignedTo, createdBy, dueDate }) {
   const nextStatus = status || 'todo';
@@ -116,33 +116,45 @@ async function moveTask(taskId, orgId, { status, position }) {
   const task = await findTaskByIdAndOrg(taskId, orgId);
   if (!task) return null;
 
-  // Shift tasks in the target column to make room
-  await query(
-    `UPDATE tasks
-     SET position = position + 1, updated_at = NOW()
-     WHERE project_id = $1
-       AND organization_id = $2
-       AND status = $3
-       AND position >= $4
-       AND id != $5
-       AND deleted_at IS NULL`,
-    [task.project_id, orgId, status, position, taskId]
-  );
+  const client = await getClient();
+  try {
+    await client.query('BEGIN');
 
-  const result = await query(
-    `UPDATE tasks
-     SET status = $1, position = $2, updated_at = NOW()
-     WHERE id = $3 AND organization_id = $4 AND deleted_at IS NULL
-     RETURNING *`,
-    [status, position, taskId, orgId]
-  );
-  return result.rows[0] || null;
+    // Shift tasks in the target column to make room
+    await client.query(
+      `UPDATE tasks
+       SET position = position + 1, updated_at = NOW()
+       WHERE project_id = $1
+         AND organization_id = $2
+         AND status = $3
+         AND position >= $4
+         AND id != $5
+         AND deleted_at IS NULL`,
+      [task.project_id, orgId, status, position, taskId]
+    );
+
+    const result = await client.query(
+      `UPDATE tasks
+       SET status = $1, position = $2, updated_at = NOW()
+       WHERE id = $3 AND organization_id = $4 AND deleted_at IS NULL
+       RETURNING *`,
+      [status, position, taskId, orgId]
+    );
+
+    await client.query('COMMIT');
+    return result.rows[0] || null;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 async function softDeleteTask(taskId, orgId) {
   const result = await query(
     `UPDATE tasks SET deleted_at = NOW()
-     WHERE id = $1 AND organization_id = $2
+     WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL
      RETURNING id, title`,
     [taskId, orgId]
   );

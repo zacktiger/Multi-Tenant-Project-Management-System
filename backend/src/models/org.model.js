@@ -151,4 +151,6 @@ module.exports = {
   createInvitation,
   findInvitationByToken,
   markInvitationAccepted,
+  deleteOldPendingInvites,
+  findPendingInvitation,
 };

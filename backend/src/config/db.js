@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const env = require('./env');
+const logger = require('../utils/logger');
 
 const pool = new Pool({
   host: env.DB.host,
@@ -17,8 +18,7 @@ pool.on('connect', () => {
 });
 
 pool.on('error', (err) => {
-  console.error('❌ Unexpected error on idle PostgreSQL client:', err.message);
-  process.exit(1);
+  logger.err('Unexpected error on idle PostgreSQL client', err);
 });
 
 const query = (text, params) => pool.query(text, params);

@@ -120,13 +120,13 @@ export default function Dashboard() {
   ];
 
   const getActionText = (activity: Activity) => {
-    const name = activity.metadata?.name || activity.metadata?.title || 'an item';
+    const name = (activity.metadata?.taskTitle || activity.metadata?.projectName || 'an item') as string;
     switch (activity.action) {
-      case 'project_created': return `created project "${name}"`;
-      case 'task_created': return `created task "${name}"`;
-      case 'task_updated': return `updated task "${name}"`;
-      case 'task_moved': return `moved task "${name}" to ${activity.metadata?.status}`;
-      case 'task_deleted': return `deleted task "${name}"`;
+      case 'project.created': return `created project "${name}"`;
+      case 'task.created': return `created task "${name}"`;
+      case 'task.updated': return `updated task "${name}"`;
+      case 'task.moved': return `moved task "${name}" to ${activity.metadata?.status}`;
+      case 'task.deleted': return `deleted task "${name}"`;
       default: return `performed ${activity.action} on ${activity.entity_type}`;
     }
   };

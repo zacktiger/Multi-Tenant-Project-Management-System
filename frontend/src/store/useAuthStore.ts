@@ -91,6 +91,15 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   switchOrgAction: async (orgId) => {
+    // Reset other store slices to prevent stale data
+    const { useStore } = await import('./useStore');
+    useStore.setState({ 
+      workspaces: [], 
+      projects: [], 
+      tasks: [], 
+      members: [] 
+    });
+
     try {
       const { data } = await authApi.switchOrganization(orgId);
       const { organization, accessToken, refreshToken } = data.data;

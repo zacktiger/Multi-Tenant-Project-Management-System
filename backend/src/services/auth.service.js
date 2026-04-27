@@ -1,11 +1,14 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { getClient } = require('../config/db');
 const env = require('../config/env');
 const userModel = require('../models/user.model');
 const orgModel = require('../models/org.model');
 const tokenModel = require('../models/token.model');
 const workspaceModel = require('../models/workspace.model');
+
+const SAFE_USER_FIELDS = 'id, name, email, avatar_url, is_verified, created_at, updated_at';
 
 function hashToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
@@ -45,28 +48,45 @@ async function signup({ name, email, password, orgName }) {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
+  const client = await getClient();
 
   try {
-    const user = await userModel.createUser({ name, email, passwordHash });
+    await client.query('BEGIN');
 
+    // 1. Create User
+    const userResult = await client.query(
+      `INSERT INTO users (name, email, password_hash)
+       VALUES ($1, $2, $3)
+       RETURNING ${SAFE_USER_FIELDS}`,
+      [name, email, passwordHash]
+    );
+    const user = userResult.rows[0];
+
+    // 2. Create Organization
     const slug = generateSlug(orgName);
-    const organization = await orgModel.createOrganization({
-      name: orgName,
-      slug,
-      createdBy: user.id,
-    });
+    const orgResult = await client.query(
+      `INSERT INTO organizations (name, slug, created_by)
+       VALUES ($1, $2, $3)
+       RETURNING id, name, slug, created_by, created_at`,
+      [orgName, slug, user.id]
+    );
+    const organization = orgResult.rows[0];
 
-    await orgModel.addOrgMember({
-      userId: user.id,
-      organizationId: organization.id,
-      role: 'admin',
-    });
+    // 3. Add Member
+    await client.query(
+      `INSERT INTO organization_members (user_id, organization_id, role)
+       VALUES ($1, $2, $3)`,
+      [user.id, organization.id, 'admin']
+    );
 
-    await workspaceModel.createWorkspace({
-      organizationId: organization.id,
-      name: 'General',
-      createdBy: user.id,
-    });
+    // 4. Create Workspace
+    await client.query(
+      `INSERT INTO workspaces (organization_id, name, created_by)
+       VALUES ($1, $2, $3)`,
+      [organization.id, 'General', user.id]
+    );
+
+    await client.query('COMMIT');
 
     const tokens = await issueTokens(user.id, organization.id, 'admin');
 
@@ -76,9 +96,12 @@ async function signup({ name, email, password, orgName }) {
       ...tokens,
     };
   } catch (err) {
+    await client.query('ROLLBACK');
     err.statusCode = err.statusCode || 500;
     err.code = err.code || 'SIGNUP_FAILED';
     throw err;
+  } finally {
+    client.release();
   }
 }
 
