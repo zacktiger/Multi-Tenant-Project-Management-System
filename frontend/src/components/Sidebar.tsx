@@ -16,7 +16,6 @@ export default function Sidebar() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  const isAdmin = organization?.role === 'admin';
   const canCreate = organization?.role === 'admin' || organization?.role === 'member';
 
   useEffect(() => {
