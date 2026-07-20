@@ -190,3 +190,25 @@ CREATE TABLE organization_invitations (
 CREATE UNIQUE INDEX idx_pending_invites_unique_per_org
 ON organization_invitations (organization_id, LOWER(email))
 WHERE accepted_at IS NULL;
+
+-- ============================================
+-- PROJECT SHARE LINKS
+-- Public, read-only board links (no account required)
+-- ============================================
+CREATE TABLE project_share_links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  token TEXT UNIQUE NOT NULL,
+  created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  expires_at TIMESTAMPTZ,
+  revoked_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_share_links_project_id ON project_share_links(project_id);
+
+-- At most one active share link per project
+CREATE UNIQUE INDEX idx_share_links_one_active_per_project
+ON project_share_links (project_id)
+WHERE revoked_at IS NULL;

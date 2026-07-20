@@ -6,7 +6,8 @@ import KanbanBoard from '../components/KanbanBoard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import InviteModal from '../components/InviteModal';
-import { Filter, Search, Plus, MoreHorizontal } from 'lucide-react';
+import ShareModal from '../components/ShareModal';
+import { Filter, Search, Plus, MoreHorizontal, Globe } from 'lucide-react';
 
 type ViewMode = 'board' | 'list' | 'timeline';
 type PriorityFilter = 'all' | 'low' | 'medium' | 'high';
@@ -23,6 +24,7 @@ export default function Project() {
   const { projects, tasks, members, isLoadingTasks, error, fetchTasks, fetchMembers } = useStore();
   const organization = useAuthStore((s) => s.organization);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -112,6 +114,15 @@ export default function Project() {
             <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full font-medium">
               View only
             </span>
+          )}
+          {isAdmin && (
+            <button
+              onClick={() => setShowShareModal(true)}
+              className="flex items-center space-x-2 px-3 py-1.5 border border-gray-200 bg-white rounded-xl text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all shadow-sm"
+            >
+              <Globe size={18} />
+              <span>Share</span>
+            </button>
           )}
           {isAdmin && (
             <button
@@ -280,6 +291,15 @@ export default function Project() {
       {/* Invite Modal */}
       {showInviteModal && (
         <InviteModal onClose={() => setShowInviteModal(false)} />
+      )}
+
+      {/* Public Share Modal */}
+      {showShareModal && (
+        <ShareModal
+          projectId={id!}
+          projectName={project.name}
+          onClose={() => setShowShareModal(false)}
+        />
       )}
     </div>
   );

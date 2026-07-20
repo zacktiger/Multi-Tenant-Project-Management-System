@@ -76,6 +76,10 @@ app.get('/api/health', async (req, res) => {
 });
 
 // Routes
+// Public routes first — the /api routers below apply `authenticate` to every
+// request they receive, which would reject unauthenticated share-link visitors.
+app.use('/api/public', require('./src/routes/public.routes'));
+
 app.use('/api/auth', authLimiter, require('./src/routes/auth.routes'));
 app.use('/api/orgs', require('./src/routes/org.routes'));
 app.use('/api', require('./src/routes/project.routes'));

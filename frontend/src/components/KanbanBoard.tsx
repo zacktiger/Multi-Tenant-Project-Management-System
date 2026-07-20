@@ -12,6 +12,8 @@ interface KanbanBoardProps {
   tasks: Task[];
   projectId: string;
   isViewer?: boolean;
+  /** Public share view: cards render but don't open the detail modal */
+  disableTaskDetail?: boolean;
 }
 
 const columns: { id: TaskStatus; label: string; color: string }[] = [
@@ -20,7 +22,7 @@ const columns: { id: TaskStatus; label: string; color: string }[] = [
   { id: 'done', label: 'Done', color: 'border-t-emerald-500' },
 ];
 
-export default function KanbanBoard({ tasks, projectId, isViewer }: KanbanBoardProps) {
+export default function KanbanBoard({ tasks, projectId, isViewer, disableTaskDetail }: KanbanBoardProps) {
   const [createModalStatus, setCreateModalStatus] = useState<TaskStatus | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const { moveTaskOptimistic, setTasks } = useStore();
@@ -106,7 +108,10 @@ export default function KanbanBoard({ tasks, projectId, isViewer }: KanbanBoardP
                       onDragStart={() => !isViewer && handleDragStart(task.id)}
                       className={draggedTaskId === task.id ? 'opacity-40' : ''}
                     >
-                      <TaskCard task={task} onClick={() => setSelectedTask(task)} />
+                      <TaskCard
+                        task={task}
+                        onClick={disableTaskDetail ? undefined : () => setSelectedTask(task)}
+                      />
                     </div>
                   ))
                 ) : (
@@ -142,7 +147,7 @@ export default function KanbanBoard({ tasks, projectId, isViewer }: KanbanBoardP
         />
       )}
 
-      {selectedTask && (
+      {selectedTask && !disableTaskDetail && (
         <TaskDetailModal
           task={selectedTask}
           isViewer={!!isViewer}

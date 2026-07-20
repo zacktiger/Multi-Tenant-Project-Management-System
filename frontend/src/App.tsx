@@ -19,6 +19,7 @@ import Project from './pages/Project';
 import Workspace from './pages/Workspace';
 import NotFound from './pages/NotFound';
 import AcceptInvite from './pages/AcceptInvite';
+import PublicBoard from './pages/PublicBoard';
 
 
 function App() {
@@ -45,6 +46,9 @@ function App() {
       <Toaster position="top-right" toastOptions={{ duration: 3000, style: { fontSize: '14px' } }} />
       <BrowserRouter>
         <Routes>
+          {/* Public shared board — no auth, no dashboard chrome */}
+          <Route path="/board/:token" element={<PublicBoard />} />
+
           {/* Auth Routes */}
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<Login />} />

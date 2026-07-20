@@ -3,6 +3,7 @@ const { body } = require('express-validator');
 const authenticate = require('../middlewares/authenticate');
 const { loadOrgMembership, requireOrgRole } = require('../middlewares/rbac');
 const projectController = require('../controllers/project.controller');
+const shareController = require('../controllers/share.controller');
 
 const router = Router();
 
@@ -48,6 +49,31 @@ router.delete(
   '/projects/:projectId',
   requireOrgRole('admin'),
   projectController.deleteProject
+);
+
+// ─── PUBLIC SHARE LINKS (admin only) ─────────────────────
+// The board these links expose is served by public.routes.js
+
+router.get(
+  '/projects/:projectId/share',
+  requireOrgRole('admin'),
+  shareController.getShareLink
+);
+
+router.post(
+  '/projects/:projectId/share',
+  requireOrgRole('admin'),
+  [
+    body('expiresInDays').optional({ nullable: true })
+      .isInt({ min: 1, max: 365 }).withMessage('Expiry must be between 1 and 365 days'),
+  ],
+  shareController.createShareLink
+);
+
+router.delete(
+  '/projects/:projectId/share',
+  requireOrgRole('admin'),
+  shareController.revokeShareLink
 );
 
 module.exports = router;
