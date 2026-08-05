@@ -51,6 +51,7 @@ psql -U postgres -d project_manager -f db/schema.sql
 psql -U postgres -d project_manager -f db/seed.sql   # optional — creates demo users
 ```
 
+
 ### Demo Credentials (after seeding)
 
 | Email | Password | Role | Can Do |
@@ -179,6 +180,12 @@ docker compose stop prometheus
 ## License
 
 MIT
+
+## Architecture
+
+For a full walkthrough of how the system works — the layered backend, the auth flow,
+multi-tenancy, RBAC, and the design trade-offs behind each — see
+[ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Testing
 
