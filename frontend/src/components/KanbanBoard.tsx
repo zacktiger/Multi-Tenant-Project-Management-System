@@ -38,26 +38,45 @@ export default function KanbanBoard({ tasks, projectId, isViewer, disableTaskDet
     e.dataTransfer.dropEffect = 'move';
   };
 
+  /**
+   * Handles a card being dropped on a column.
+   *
+   * This is an *optimistic* update: the card moves on screen immediately and
+   * the server is told afterwards. The alternative — wait for the API, then
+   * redraw — costs a visible ~200ms pause on every drag, which makes the board
+   * feel broken.
+   *
+   * The trade-off is that the UI briefly shows a state the server hasn't
+   * confirmed, so the failure path has to be able to undo it. That's what the
+   * `previousTasks` snapshot below is for.
+   */
   const handleDrop = async (e: React.DragEvent, targetStatus: TaskStatus) => {
     e.preventDefault();
     if (!draggedTaskId) return;
 
     const task = tasks.find((t) => t.id === draggedTaskId);
+    // Dropping a card back on its own column is a no-op, not a move.
     if (!task || task.status === targetStatus) {
       setDraggedTaskId(null);
       return;
     }
 
+    // Append to the end of the target column: its current length is the next
+    // free position, since positions are zero-based.
     const targetColumnTasks = tasks.filter((t) => t.status === targetStatus);
     const newPosition = targetColumnTasks.length;
 
-    // Optimistic update
+    // Snapshot BEFORE mutating — this is the only way back if the request
+    // fails. Without it a failed move would leave the board lying about where
+    // the task actually is.
     const previousTasks = [...tasks];
+
     moveTaskOptimistic(draggedTaskId, targetStatus, newPosition);
 
     try {
       await taskApi.moveTask(draggedTaskId, { status: targetStatus, position: newPosition });
     } catch {
+      // Roll back to exactly what was on screen before the drag.
       setTasks(previousTasks);
       toast.error('Failed to move task');
     }

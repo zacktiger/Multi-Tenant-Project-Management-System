@@ -1,16 +1,13 @@
 const activityService = require('../services/activity.service');
+const asyncHandler = require('../middlewares/asyncHandler');
+const parsePagination = require('../utils/pagination');
 const { success } = require('../utils/response');
 
-async function getActivity(req, res, next) {
-  try {
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 30));
+const getActivity = asyncHandler(async (req, res) => {
+  const { page, limit } = parsePagination(req.query, { defaultLimit: 30 });
 
-    const data = await activityService.getActivity(req.params.orgId, { page, limit });
-    return success(res, data, 'Activity feed');
-  } catch (err) {
-    next(err);
-  }
-}
+  const data = await activityService.getActivity(req.params.orgId, { page, limit });
+  return success(res, data, 'Activity feed');
+});
 
 module.exports = { getActivity };

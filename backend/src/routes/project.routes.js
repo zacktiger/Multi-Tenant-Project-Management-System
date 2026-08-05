@@ -1,12 +1,15 @@
 const { Router } = require('express');
 const { body } = require('express-validator');
 const authenticate = require('../middlewares/authenticate');
+const validate = require('../middlewares/validate');
 const { loadOrgMembership, requireOrgRole } = require('../middlewares/rbac');
 const projectController = require('../controllers/project.controller');
 const shareController = require('../controllers/share.controller');
 
 const router = Router();
 
+// Authenticate, then resolve the caller's org membership from the database.
+// See task.routes.js for why the membership is re-read on every request.
 router.use(authenticate);
 router.use(loadOrgMembership);
 
@@ -24,6 +27,7 @@ router.post(
     body('name').trim().isLength({ min: 2 }).withMessage('Project name must be at least 2 characters'),
     body('description').optional().trim(),
   ],
+  validate,
   projectController.createProject
 );
 
@@ -42,6 +46,7 @@ router.patch(
     body('description').optional().trim(),
     body('status').optional().isIn(['active', 'archived', 'paused']).withMessage('Invalid status'),
   ],
+  validate,
   projectController.updateProject
 );
 
@@ -52,7 +57,10 @@ router.delete(
 );
 
 // ─── PUBLIC SHARE LINKS (admin only) ─────────────────────
-// The board these links expose is served by public.routes.js
+// Creating and revoking a link is an admin action and lives here, behind auth.
+// The board those links expose is served by public.routes.js, which has no
+// authentication at all — keeping the two surfaces in separate files makes it
+// hard to accidentally expose a write path to an anonymous visitor.
 
 router.get(
   '/projects/:projectId/share',
@@ -67,6 +75,7 @@ router.post(
     body('expiresInDays').optional({ nullable: true })
       .isInt({ min: 1, max: 365 }).withMessage('Expiry must be between 1 and 365 days'),
   ],
+  validate,
   shareController.createShareLink
 );
 
