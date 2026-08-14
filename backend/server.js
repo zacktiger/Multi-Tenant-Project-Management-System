@@ -3,7 +3,6 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const env = require('./src/config/env');
 const { pool } = require('./src/config/db');
-const { metricsMiddleware, metricsHandler } = require('./src/middlewares/metrics');
 const errorHandler = require('./src/middlewares/errorHandler');
 const logger = require('./src/utils/logger');
 
@@ -16,29 +15,6 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(metricsMiddleware);
-
-// Prometheus metrics endpoint
-if (!env.METRICS_TOKEN) {
-  logger.warn('⚠️  METRICS_TOKEN is not set. /metrics endpoint is publicly accessible.');
-}
-
-app.get('/metrics', (req, res, next) => {
-  if (!env.METRICS_TOKEN) {
-    return metricsHandler(req, res, next);
-  }
-
-  const authHeader = req.headers.authorization;
-  if (!authHeader || authHeader !== `Bearer ${env.METRICS_TOKEN}`) {
-    return res.status(401).json({
-      success: false,
-      error: 'Unauthorized metrics access',
-      code: 'UNAUTHORIZED_METRICS',
-    });
-  }
-
-  metricsHandler(req, res, next);
-});
 
 // Rate limiter for auth routes
 const authLimiter = rateLimit({

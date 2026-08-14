@@ -41,5 +41,4 @@ module.exports = {
   },
   JWT_SECRET: process.env.JWT_SECRET,
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN,
-  METRICS_TOKEN: process.env.METRICS_TOKEN,
 };

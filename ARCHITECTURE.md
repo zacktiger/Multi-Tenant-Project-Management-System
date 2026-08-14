@@ -19,11 +19,10 @@ No code is duplicated here unnecessarily. Every claim points at a real file so y
 9. [Optimistic UI updates](#9-optimistic-ui-updates)
 10. [Public share links](#10-public-share-links)
 11. [Activity logging](#11-activity-logging)
-12. [Observability — metrics](#12-observability--metrics)
-13. [The frontend, layer by layer](#13-the-frontend-layer-by-layer)
-14. [The data model](#14-the-data-model)
-15. [Interview questions you should expect](#15-interview-questions-you-should-expect)
-16. [Known trade-offs and what I'd do next](#16-known-trade-offs-and-what-id-do-next)
+12. [The frontend, layer by layer](#12-the-frontend-layer-by-layer)
+13. [The data model](#13-the-data-model)
+14. [Interview questions you should expect](#14-interview-questions-you-should-expect)
+15. [Known trade-offs and what I'd do next](#15-known-trade-offs-and-what-id-do-next)
 
 ---
 
@@ -67,11 +66,9 @@ graph LR
     end
 
     H[(PostgreSQL)]
-    I[Prometheus]
 
     C -->|JSON over HTTP| D
     G -->|raw SQL via pg| H
-    D -.->|/metrics| I
 ```
 
 Two separate applications talk over HTTP:
@@ -539,26 +536,7 @@ The `metadata JSONB` column stores per-action context — for a move, that's `{ 
 
 ---
 
-## 12. Observability — metrics
-
-`src/middlewares/metrics.js` exposes Prometheus metrics: a **counter** of total requests and a **histogram** of request durations, both labelled by method, route, and status code.
-
-The subtle part is `normalizeRoute()`:
-
-```js
-.replace(/[0-9a-fA-F]{8}-.../g, ':id')   // UUIDs → :id
-.replace(/\b\d+\b/g, ':id')              // numbers → :id
-```
-
-**Why this matters:** without it, `/api/tasks/abc-123` and `/api/tasks/def-456` would be recorded as two different routes. With thousands of tasks you'd get thousands of distinct label values — a problem with a name: **high-cardinality label explosion**, which is the classic way to bring down a Prometheus server. Collapsing IDs to `:id` keeps the label set small and bounded.
-
-Timing uses `process.hrtime.bigint()` (nanosecond precision, monotonic) rather than `Date.now()`, so it isn't affected by system clock adjustments. Measurement happens on the `res.on('finish')` event — the moment the response is fully flushed.
-
-The endpoint is protected by a bearer token when `METRICS_TOKEN` is set, and `server.js` logs a warning when it isn't.
-
----
-
-## 13. The frontend, layer by layer
+## 12. The frontend, layer by layer
 
 | Directory | Role |
 |---|---|
@@ -601,7 +579,7 @@ activeOrg = organizations.find((o) => o.id === payload.orgId) || organizations[0
 
 ---
 
-## 14. The data model
+## 13. The data model
 
 ```mermaid
 erDiagram
@@ -649,7 +627,7 @@ Don't let this be found rather than volunteered. The framing that's honest and l
 
 ---
 
-## 15. Interview questions you should expect
+## 14. Interview questions you should expect
 
 **"Walk me through what happens when a user logs in."**
 > Password checked with `bcrypt.compare`. On success we look up their org memberships and issue two tokens: a 15-minute JWT access token containing `userId`, `orgId`, and `role`; and a 30-day refresh token — a random UUID whose SHA-256 hash is stored in the database. The browser keeps both, and axios attaches the access token to every subsequent request.
@@ -677,7 +655,7 @@ Don't let this be found rather than volunteered. The framing that's honest and l
 
 ---
 
-## 16. Known trade-offs and what I'd do next
+## 15. Known trade-offs and what I'd do next
 
 Being able to critique your own project is a strong signal. These are real, and none of them is a crisis.
 
@@ -700,7 +678,7 @@ These are things I'd want *you* to spot before an interviewer does:
 - **`.env` files are committed to git.** `backend/.env` contains a database password and JWT secret. They're local development values, not production credentials, but a reviewer browsing the repo sees committed secrets. Add `.env` to `.gitignore` and keep only `.env.example`.
 - **Auto-seeding runs on every boot.** `server.js` seeds the database when the `users` table is empty. Convenient for a demo deploy; you'd want it behind an explicit flag in a real production service.
 - **Positions aren't compacted** in the source column after a move, leaving harmless gaps.
-- **`workspace_members` and `task_history` are unused** — see [section 14](#14-the-data-model).
+- **`workspace_members` and `task_history` are unused** — see [section 13](#13-the-data-model).
 - **No automated tests.** `TESTING.md` is a manual checklist. This is the single highest-value thing to add.
 
 ### What I'd build next, in priority order

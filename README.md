@@ -77,42 +77,6 @@ npm run dev
 # → http://localhost:5173
 ```
 
-## Monitoring with Prometheus
-
-The backend now exposes Prometheus metrics at:
-
-- `http://localhost:5000/metrics`
-
-### Run Prometheus via Docker
-
-From the project root:
-
-```bash
-docker compose up -d prometheus
-```
-
-Then open:
-
-- Prometheus UI: `http://localhost:9090`
-- Target status: `http://localhost:9090/targets`
-
-The preconfigured scrape job (`project-manager-api`) uses `monitoring/prometheus.yml` and scrapes the backend metrics endpoint every 15 seconds.
-
-To stop Prometheus:
-
-```bash
-docker compose stop prometheus
-```
-
-> Note: Make sure Docker Desktop / Docker daemon is running before using compose commands.
-
-### Useful metric names
-
-- `project_manager_http_requests_total`
-- `project_manager_http_request_duration_seconds`
-- `project_manager_process_cpu_user_seconds_total`
-- `project_manager_process_resident_memory_bytes`
-
 ## API Endpoints
 
 ### Auth
